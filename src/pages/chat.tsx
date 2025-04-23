@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Message } from "../utils/types";
+import { Message, MistralChatResponse } from "../utils/types";
 import chatResponse from "../services/mistral";
 
 export default function Chat() {
@@ -10,32 +10,33 @@ export default function Chat() {
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!message) return;
-    setLoading(true);
-    setMessages((prev) => [...prev, { text: message, sender: "user" }]);
-    setMessage("");
+  const handleSend = async () => {
+    try {
+      if (!message.trim()) return;
+      setMessages((prev) => [...prev, { text: message, sender: "user" }]);
+      setMessage("");
+      setLoading(true);
 
-    chatResponse(message)
-      .then((response) => {
-        console.log(response.choices?.[0]);
+      const response: MistralChatResponse = await chatResponse(message);
+
+      if (!response) {
+        setLoading(false);
+        setError("No response from the server.");
+        return;
+      }
+
+      if (response.code === 200) {
         setMessages((prev) => [
           ...prev,
-          {
-            text:
-              (response.choices?.[0].message.content as string) ||
-              "No response",
-            sender: "bot",
-          },
+          { text: response.response, sender: "assistant" },
         ]);
-      })
-      .catch((err) => {
-        setError("Error fetching response. Please try again.");
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      setError("An error occurred while fetching the response.");
+      console.error("Error:", error);
+    }
   };
 
   useEffect(() => {
