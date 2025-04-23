@@ -18,6 +18,7 @@ export default function Chat() {
       setLoading(true);
 
       const response: MistralChatResponse = await chatResponse(message);
+      console.log("Response:", response);
 
       if (!response) {
         setLoading(false);
@@ -25,12 +26,11 @@ export default function Chat() {
         return;
       }
 
-      if (response.code === 200) {
-        setMessages((prev) => [
-          ...prev,
-          { text: response.response, sender: "assistant" },
-        ]);
-      }
+      setMessages((prev) => [
+        ...prev,
+        { text: response.content, sender: "assistant" },
+      ]);
+
       setLoading(false);
     } catch (error) {
       setLoading(false);
